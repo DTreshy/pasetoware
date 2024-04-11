@@ -3,19 +3,18 @@ package pasetoware
 import (
 	"errors"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 var (
-	ErrExpiredToken   = errors.New("token has expired")
-	ErrMissingToken   = errors.New("missing PASETO token")
-	ErrInvalidToken   = errors.New("invalid PASETO token")
-	ErrDataUnmarshal  = errors.New("can't unmarshal token data to Payload type")
-	TokenAudience     = "gofiber.gophers"
-	TokenSubject      = "user-token"
-	TokenField        = "token"
-	TokenPrefix       = "Bearer"
-	DefaultContextKey = "payload"
+	ErrExpiredToken  = errors.New("token has expired")
+	ErrMissingToken  = errors.New("missing PASETO token")
+	ErrInvalidToken  = errors.New("invalid PASETO token")
+	ErrDataUnmarshal = errors.New("can't unmarshal token data to Payload type")
+
+	TokenAudience = "gofiber.gophers"
+	TokenSubject  = "user-token"
+	TokenPrefix   = "Bearer"
 )
 
 // Config defines the config for PASETO middleware
@@ -35,10 +34,6 @@ type Config struct {
 
 	Tokener *Tokener
 
-	// ContextKey to store user information from the token into context.
-	// Optional. Default: DefaultContextKey.
-	ContextKey string
-
 	PayloadKeys []string
 }
 
@@ -48,10 +43,9 @@ var ConfigDefault = Config{
 	SuccessHandler: nil,
 	ErrorHandler:   nil,
 	Tokener:        NewTokener(),
-	ContextKey:     DefaultContextKey,
 }
 
-func defaultErrorHandler(c *fiber.Ctx, err error) error {
+func defaultErrorHandler(c fiber.Ctx, err error) error {
 	return c.Status(fiber.StatusUnauthorized).SendString(err.Error())
 }
 
@@ -70,7 +64,7 @@ func configDefault(authConfigs ...Config) Config {
 	}
 
 	if config.SuccessHandler == nil {
-		config.SuccessHandler = func(c *fiber.Ctx) error {
+		config.SuccessHandler = func(c fiber.Ctx) error {
 			return c.Next()
 		}
 	}

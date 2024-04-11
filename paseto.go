@@ -3,7 +3,7 @@ package pasetoware
 import (
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // New PASETO middleware, returns a handler that takes a token in selected lookup param and in case token is valid
@@ -13,21 +13,13 @@ func New(authConfigs ...Config) fiber.Handler {
 	config := configDefault(authConfigs...)
 
 	// Return middleware handler
-	return func(c *fiber.Ctx) error {
-		authHeader := strings.Split(c.Get(fiber.HeaderAuthorization), " ")
-		if len(authHeader) != 2 {
-			return config.ErrorHandler(c, ErrInvalidToken)
+	return func(c fiber.Ctx) error {
+		token, err := getToken(c)
+		if err != nil {
+			return config.ErrorHandler(c, err)
 		}
 
-		if authHeader[0] != TokenPrefix {
-			return config.ErrorHandler(c, ErrInvalidToken)
-		}
-
-		if authHeader[1] == "" {
-			return config.ErrorHandler(c, ErrMissingToken)
-		}
-
-		parsedToken, err := config.Tokener.ParseToken(authHeader[1])
+		parsedToken, err := config.Tokener.ParseToken(token)
 		if err != nil {
 			return config.ErrorHandler(c, err)
 		}
@@ -45,4 +37,21 @@ func New(authConfigs ...Config) fiber.Handler {
 
 		return config.SuccessHandler(c)
 	}
+}
+
+func getToken(c fiber.Ctx) (string, error) {
+	authHeader := strings.SplitN(c.Get(fiber.HeaderAuthorization), " ", 2)
+	if len(authHeader) != 2 {
+		return "", ErrInvalidToken
+	}
+
+	if authHeader[0] != TokenPrefix {
+		return "", ErrInvalidToken
+	}
+
+	if authHeader[1] == "" {
+		return "", ErrMissingToken
+	}
+
+	return authHeader[1], nil
 }
