@@ -25,9 +25,8 @@ func New(authConfigs ...Config) fiber.Handler {
 		}
 
 		for _, key := range config.PayloadKeys {
-			var val string
-
-			if err := parsedToken.Get(key, val); err != nil {
+			val, err := parsedToken.GetString(key)
+			if err != nil {
 				return config.ErrorHandler(c, err)
 			}
 
